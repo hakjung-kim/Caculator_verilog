@@ -1,0 +1,39 @@
+module debounce(clk, rst, btn_in, btn_out); 
+    parameter SIZE = 16; // it is pressed for 1/clk_fq * 2^(SIZE-1) second, it can be debounced. 5.46ms for 6MHz
+    input clk, rst;
+    input [4:0] btn_in; 
+    output [4:0] btn_out;
+
+    reg [4:0] btn_in_d1, btn_in_d2; //btn delayed
+    reg [4:0] btn_tmp; 
+    reg pulse_d; 
+    wire set;  //sync reset to zero
+    reg [SIZE-1:0] o = {SIZE{1'b0}}; //counter is initialized to 0
+    
+    always @(posedge clk or posedge rst)
+    begin
+        if (rst) begin
+            btn_in_d1 <= 0;
+            btn_in_d2 <= 0;
+            o <= {SIZE{1'b0}};
+            btn_tmp <= 5'b0;
+        end 
+        else begin 
+            btn_in_d1 <= btn_in;
+            btn_in_d2 <= btn_in_d1;
+            if (set == 1'b1) o <= {SIZE{1'b0}}; //reset counter because input is changing
+            else if(o[SIZE-1] == 1'b0) o <= o + 1; //stable input time is not yet met
+            else btn_tmp <= btn_in_d2; //stable input time is met, catch the btn value and retain.  
+        end
+    end
+
+    assign set = (btn_in_d1 != btn_in_d2)? 1'b1 : 1'b0; //determine when to start/reset counter        
+    
+    always @(posedge clk or posedge rst) begin
+       if (rst) pulse_d <= 1'b0;  
+       else pulse_d <= btn_tmp[4]; 
+    end 
+            
+    assign btn_out = {btn_tmp[4] & (~pulse_d), btn_tmp[3:0]}; 
+        
+endmodule
