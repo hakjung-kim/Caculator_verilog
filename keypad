@@ -1,0 +1,161 @@
+----------------------------------------------------------------------------------
+-- Company: Digilent Inc 2011
+-- Engineer: Michelle Yu  
+-- Create Date:      17:18:24 08/23/2011 
+--
+-- Module Name:    Decoder - Behavioral 
+-- Project Name:  PmodKYPD
+-- Target Devices: Nexys3
+-- Tool versions: Xilinx ISE 13.2
+-- Description: 
+--	This file defines a component Decoder for the demo project PmodKYPD. 
+-- The Decoder scans each column by asserting a low to the pin corresponding to the column 
+-- at 1KHz. After a column is asserted low, each row pin is checked. 
+-- When a row pin is detected to be low, the key that was pressed could be determined.
+--
+-- Revision: 
+-- Revision 0.01 - File Created
+----------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity keypad is
+    Port (
+        clk : in  std_logic;
+		rst : in std_logic; 
+        row : in  std_logic_vector (3 downto 0);
+		col : out  std_logic_vector (3 downto 0);
+        key_out : out  std_logic_vector (4 downto 0)  -- DecodeOut(4) : pressed or not, DecodeOut(3 downto 0) : character
+    );
+end keypad;
+
+architecture Behavioral of keypad is
+
+signal sclk : std_logic_vector(31 downto 0);
+signal pressed : std_logic; 
+
+begin
+	process(clk, rst)
+		begin 
+		if rst = '1' then
+		      sclk <= (others=>'0'); 
+		      col <= (others=>'0'); 
+		      key_out <= (others=>'0');
+		      pressed <= '0'; 
+		elsif rising_edge(clk) then
+			-- 1ms
+			if sclk = 6000 then    -- 6000 is 1ms for 6MHz clock
+				--C1
+				col <= "0111";
+				sclk <= sclk+1;
+			-- check row pins
+			elsif sclk = 6000+8 then	 
+				--R1
+				if row = "0111" then
+					key_out <= "10001";	--1
+                    pressed <= '1'; 
+				--R2
+				elsif row = "1011" then
+					key_out <= "10100"; --4
+                    pressed <= '1';					
+				--R3
+				elsif row = "1101" then
+					key_out <= "10111"; --7
+                    pressed <= '1';					
+				--R4
+				elsif row = "1110" then
+					key_out <= "10000"; --0
+                    pressed <= '1';					
+				end if;
+				sclk <= sclk+1;
+			-- 2ms
+			elsif sclk = 6000*2 then	 -- 6000*2 is 2ms for 6MHz clock
+				--C2
+				col<= "1011";
+				sclk <= sclk+1;
+			-- check row pins
+			elsif sclk = 6000*2+8 then	 
+				--R1
+				if row = "0111" then		
+					key_out <= "10010"; --2
+                    pressed <= '1';					
+				--R2
+				elsif row = "1011" then
+					key_out <= "10101"; --5
+                    pressed <= '1';					
+				--R3
+				elsif row = "1101" then
+					key_out <= "11000"; --8
+                    pressed <= '1';					
+				--R4
+				elsif row = "1110" then
+					key_out <= "11111"; --F
+                    pressed <= '1';					
+				end if;
+				sclk <= sclk+1;	
+			--3ms
+			elsif sclk = 6000*3 then -- 3ms
+				--C3
+				col <= "1101";
+				sclk <= sclk+1;
+			-- check row pins
+			elsif sclk = 6000*3+8 then
+				--R1
+				if row = "0111" then
+					key_out <= "10011"; --3
+                    pressed <= '1';					
+				--R2
+				elsif row = "1011" then
+					key_out <= "10110"; --6
+                    pressed <= '1';					
+				--R3
+				elsif row = "1101" then
+					key_out <= "11001"; --9
+                    pressed <= '1';					
+				--R4
+				elsif row = "1110" then
+					key_out <= "11110"; --E
+                    pressed <= '1';					
+				end if;
+				sclk <= sclk+1;
+			--4ms
+			elsif sclk = 6000*4 then -- 25175x4 (4ms)
+				--C4
+				col <= "1110";
+				sclk <= sclk+1;
+			-- check row pins
+			elsif sclk = 6000*4+8 then -- 4ms
+				--R1
+				if row = "0111" then
+					key_out <= "11010"; --A
+                    pressed <= '1';					
+				--R2
+				elsif row = "1011" then
+					key_out <= "11011"; --B
+                    pressed <= '1';					
+				--R3
+				elsif row = "1101" then
+					key_out <= "11100"; --C
+                    pressed <= '1';					
+				--R4
+				elsif row = "1110" then
+					key_out <= "11101"; --D
+                    pressed <= '1';					
+				end if;
+  				sclk <= sclk+1;
+  				
+			elsif sclk = 6000*20 then -- (20ms)				
+				pressed <= '0';
+				key_out <= (others=>'0');  
+				sclk <= (others=>'0');
+				
+			else
+				sclk <= sclk+1;
+
+			end if;
+		end if;
+	end process;
+						 
+end Behavioral;
